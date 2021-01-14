@@ -1,8 +1,8 @@
-const  {v4 : uuidv4}  = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const HttpError = require("../models/http-error");
 
-const DUMMY_PRODUCTS = [
+let DUMMY_PRODUCTS = [
   {
     id: 1,
     name: "World Wide Syndicate Sweatshirt",
@@ -68,9 +68,46 @@ const createProduct = (req, res, next) => {
   };
 
   DUMMY_PRODUCTS.push(createdProduct);
-  res.status(201).json({product: createdProduct});
+  res.status(201).json({ product: createdProduct });
+};
+
+const updateProduct = (req, res, next) => {
+  const { name, type, color, size, details } = req.body;
+  const productId = req.params.pid;
+
+  const updatedProduct = {
+    ...DUMMY_PRODUCTS.find((product) => {
+      return product.id === +productId;
+    }),
+    name: name, 
+    type: type,
+    color: color,
+    size: size,
+    details: details
+  };
+
+  console.log(updatedProduct)
+
+  const productIndex = DUMMY_PRODUCTS.findIndex(
+    (product) => product.id === +productId
+  );
+
+  DUMMY_PRODUCTS[productIndex] = updatedProduct;
+  res.status(201).json({ product: updatedProduct });
+};
+
+const deleteProduct = (req, res, next) => {
+  const productId = req.params.pid;
+
+  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter(product => {
+    return product.id !== +productId
+  })
+
+  res.status(200).json({message: 'deleted product'})
 };
 
 exports.getProducts = getProducts;
 exports.getProductById = getProductById;
 exports.createProduct = createProduct;
+exports.updateProduct = updateProduct;
+exports.deleteProduct = deleteProduct;

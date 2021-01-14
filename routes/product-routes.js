@@ -10,4 +10,8 @@ router.get("/:pid", productsController.getProductById);
 
 router.post("/", productsController.createProduct);
 
+router.patch("/:pid", productsController.updateProduct);
+
+router.delete("/:pid", productsController.deleteProduct);
+
 module.exports = router;
