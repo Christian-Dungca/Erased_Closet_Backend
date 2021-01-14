@@ -1,3 +1,5 @@
+const  {v4 : uuidv4}  = require('uuid');
+
 const HttpError = require("../models/http-error");
 
 const DUMMY_PRODUCTS = [
@@ -5,34 +7,28 @@ const DUMMY_PRODUCTS = [
     id: 1,
     name: "World Wide Syndicate Sweatshirt",
     type: "shirts",
-    description:
+    details:
       "V-neck shirt with lapel collar. Long sleeves with cuffs. Front tie at hem. Front button closure. ",
     color: "green",
     size: "medium",
-    inBag: false,
-    images: undefined,
     imageUrl: "../assets/images/big-model-yellow-hat.jpg",
   },
   {
     id: 2,
     name: "product name",
     type: "shirts",
-    description: undefined,
+    details: undefined,
     color: "yellow",
     size: undefined,
-    inBag: false,
-    images: undefined,
     imageUrl: "../assets/images/big-model-yellow-hat.jpg",
   },
   {
     id: 3,
     name: "product name",
     type: "shirts",
-    description: undefined,
+    details: undefined,
     color: "yellow",
     size: undefined,
-    inBag: false,
-    images: undefined,
     imageUrl: "../assets/images/big-model-yellow-hat.jpg",
   },
 ];
@@ -59,5 +55,22 @@ const getProductById = (req, res, next) => {
   res.json({ product: product });
 };
 
+const createProduct = (req, res, next) => {
+  const { name, type, color, size, details } = req.body;
+
+  const createdProduct = {
+    id: uuidv4(),
+    name,
+    type,
+    color,
+    size,
+    details,
+  };
+
+  DUMMY_PRODUCTS.push(createdProduct);
+  res.status(201).json({product: createdProduct});
+};
+
 exports.getProducts = getProducts;
 exports.getProductById = getProductById;
+exports.createProduct = createProduct;
