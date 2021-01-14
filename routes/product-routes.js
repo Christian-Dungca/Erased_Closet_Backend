@@ -1,5 +1,7 @@
 const express = require("express");
 
+const HttpError = require("../models/http-error");
+
 const router = express.Router();
 
 const DUMMY_PRODUCTS = [
@@ -40,16 +42,22 @@ const DUMMY_PRODUCTS = [
 ];
 
 router.get("/", (req, res, next) => {
-  res.json({ products: DUMMY_PRODUCTS});
+  res.json({ products: DUMMY_PRODUCTS });
 });
 
 router.get("/:pid", (req, res, next) => {
   const productId = req.params.pid;
+
   const product = DUMMY_PRODUCTS.find((prod) => {
     return prod.id === +productId;
   });
 
-  res.json({ product: product  });
+  if (!product) {
+    const error = new HttpError("Could not find a product for the provided id.", 404);
+    throw error;
+  }
+
+  res.json({ product: product });
 });
 
 module.exports = router;
