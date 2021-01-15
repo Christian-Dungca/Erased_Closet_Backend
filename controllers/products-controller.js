@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
 
@@ -56,8 +57,16 @@ const getProductById = (req, res, next) => {
 };
 
 const createProduct = (req, res, next) => {
-  const { name, type, color, size, details } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    throw new HttpError(
+      "Invalid information provided. Aborting creation of product",
+      422
+    );
+  }
 
+  const { name, type, color, size, details } = req.body;
   const createdProduct = {
     id: uuidv4(),
     name,
@@ -68,10 +77,21 @@ const createProduct = (req, res, next) => {
   };
 
   DUMMY_PRODUCTS.push(createdProduct);
-  res.status(201).json({ product: createdProduct });
+  res
+    .status(201)
+    .json({ message: "created new product", product: createdProduct });
 };
 
 const updateProduct = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    throw new HttpError(
+      "Invalid information provided. Aborting creation of product",
+      422
+    );
+  }
+
   const { name, type, color, size, details } = req.body;
   const productId = req.params.pid;
 
@@ -79,14 +99,14 @@ const updateProduct = (req, res, next) => {
     ...DUMMY_PRODUCTS.find((product) => {
       return product.id === +productId;
     }),
-    name: name, 
+    name: name,
     type: type,
     color: color,
     size: size,
-    details: details
+    details: details,
   };
 
-  console.log(updatedProduct)
+  console.log(updatedProduct);
 
   const productIndex = DUMMY_PRODUCTS.findIndex(
     (product) => product.id === +productId
@@ -98,12 +118,15 @@ const updateProduct = (req, res, next) => {
 
 const deleteProduct = (req, res, next) => {
   const productId = req.params.pid;
+  if (!DUMMY_PRODUCTS.find((p) => p.id === +productId)) {
+    throw new HttpError("Could not find product with that id to delete", 404);
+  }
 
-  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter(product => {
-    return product.id !== +productId
-  })
+  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter((product) => {
+    return product.id !== +productId;
+  });
 
-  res.status(200).json({message: 'deleted product'})
+  res.status(200).json({ message: "deleted product" });
 };
 
 exports.getProducts = getProducts;
