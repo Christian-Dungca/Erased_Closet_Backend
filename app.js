@@ -1,9 +1,12 @@
+const dotenv = require('dotenv');
 const express = require("express");
 const bodyParser = require("body-parser");
 
 const productsRoutes = require("./routes/product-routes");
 const usersRoutes = require("./routes/user-routes");
 const HttpError = require("./models/http-error");
+
+dotenv.config({path: './config.env'});
 
 const app = express();
 
