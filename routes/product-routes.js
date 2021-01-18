@@ -33,6 +33,8 @@ router.patch(
   productsController.updateProduct
 );
 
+
+
 router.delete("/:pid", productsController.deleteProduct);
 
 module.exports = router;
