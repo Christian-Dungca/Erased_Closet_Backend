@@ -101,9 +101,11 @@ const updateProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
-    throw new HttpError(
-      "Invalid information provided. Aborting creation of product",
-      422
+    return next(
+      new HttpError(
+        "Invalid information provided. Aborting creation of product",
+        422
+      )
     );
   }
 
@@ -150,12 +152,12 @@ const deleteProduct = async (req, res, next) => {
     const err = new HttpError("Could not find product to delete", 404);
     return next(err);
   }
-  
+
   try {
     await deletedProduct.remove();
   } catch (error) {
     const err = new HttpError("Could not delete product", 404);
-    return next(err)
+    return next(err);
   }
 
   res.status(200).json({ message: "deleted product", deletedProduct });
