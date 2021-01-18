@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
+const Product = require("../models/product");
 
 let DUMMY_PRODUCTS = [
   {
@@ -38,25 +39,29 @@ const getProducts = (req, res, next) => {
   res.json({ products: DUMMY_PRODUCTS });
 };
 
-const getProductById = (req, res, next) => {
+const getProductById = async (req, res, next) => {
   const productId = req.params.pid;
+  let product;
 
-  const product = DUMMY_PRODUCTS.find((prod) => {
-    return prod.id === +productId;
-  });
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError("Could not find a product", 500);
+    return next(error);
+  }
 
   if (!product) {
     const error = new HttpError(
       "Could not find a product for the provided id.",
       404
     );
-    throw error;
+    return next(console.error);
   }
 
-  res.json({ product: product });
+  res.json({ product: product.toObject({ getters: true }) });
 };
 
-const createProduct = (req, res, next) => {
+const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
@@ -66,23 +71,33 @@ const createProduct = (req, res, next) => {
     );
   }
 
-  const { name, type, color, size, details } = req.body;
-  const createdProduct = {
-    id: uuidv4(),
+  const { name, type, details, color, size, image, images } = req.body;
+  const createdProduct = new Product({
     name,
     type,
+    details,
     color,
     size,
-    details,
-  };
+    image: "https://picsum.photos/id/237/200/300",
+    images: [
+      "https://picsum.photos/seed/picsum/200/300",
+      "https://picsum.photos/200/300?grayscale",
+    ],
+  });
 
-  DUMMY_PRODUCTS.push(createdProduct);
+  try {
+    await createdProduct.save();
+  } catch (err) {
+    const error = new HttpError("Creating Product failed.", 500);
+    return next(error);
+  }
+
   res
     .status(201)
     .json({ message: "created new product", product: createdProduct });
 };
 
-const updateProduct = (req, res, next) => {
+const updateProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
@@ -94,39 +109,56 @@ const updateProduct = (req, res, next) => {
 
   const { name, type, color, size, details } = req.body;
   const productId = req.params.pid;
+  let updatedProduct;
 
-  const updatedProduct = {
-    ...DUMMY_PRODUCTS.find((product) => {
-      return product.id === +productId;
-    }),
-    name: name,
-    type: type,
-    color: color,
-    size: size,
-    details: details,
-  };
-
-  console.log(updatedProduct);
-
-  const productIndex = DUMMY_PRODUCTS.findIndex(
-    (product) => product.id === +productId
-  );
-
-  DUMMY_PRODUCTS[productIndex] = updatedProduct;
-  res.status(201).json({ product: updatedProduct });
-};
-
-const deleteProduct = (req, res, next) => {
-  const productId = req.params.pid;
-  if (!DUMMY_PRODUCTS.find((p) => p.id === +productId)) {
-    throw new HttpError("Could not find product with that id to delete", 404);
+  try {
+    updatedProduct = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError("Could not find a product", 500);
+    return next(error);
   }
 
-  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter((product) => {
-    return product.id !== +productId;
-  });
+  updatedProduct.name = name;
+  updatedProduct.type = type;
+  updatedProduct.color = color;
+  updatedProduct.size = size;
+  updatedProduct.details = details;
 
-  res.status(200).json({ message: "deleted product" });
+  try {
+    await updatedProduct.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Could not find a product for the provided id.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(201).json({
+    message: "Upated product",
+    product: updatedProduct.toObject({ getters: true }),
+  });
+};
+
+const deleteProduct = async (req, res, next) => {
+  const productId = req.params.pid;
+  let deletedProduct;
+
+  try {
+    deletedProduct = await Product.findById(productId);
+  } catch (error) {
+    const err = new HttpError("Could not find product to delete", 404);
+    return next(err);
+  }
+  
+  try {
+    await deletedProduct.remove();
+  } catch (error) {
+    const err = new HttpError("Could not delete product", 404);
+    return next(err)
+  }
+
+  res.status(200).json({ message: "deleted product", deletedProduct });
 };
 
 exports.getProducts = getProducts;
