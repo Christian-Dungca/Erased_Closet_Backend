@@ -105,6 +105,8 @@ const login = async (req, res, next) => {
   res.json({ message: "Logged in", user: existingUser });
 };
 
+
+
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;

@@ -7,6 +7,10 @@ const router = express.Router();
 
 router.get("/", productsController.getProducts);
 
+router.get("/cart", productsController.getCart);
+
+router.post("/cart/:pid", productsController.addToCart);
+
 router.get("/:pid", productsController.getProductById);
 
 router.post(
@@ -32,8 +36,6 @@ router.patch(
   ],
   productsController.updateProduct
 );
-
-
 
 router.delete("/:pid", productsController.deleteProduct);
 

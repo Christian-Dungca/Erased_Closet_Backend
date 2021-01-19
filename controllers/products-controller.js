@@ -3,6 +3,7 @@ const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
+const User = require("../models/user");
 
 let DUMMY_PRODUCTS = [
   {
@@ -35,8 +36,22 @@ let DUMMY_PRODUCTS = [
   },
 ];
 
-const getProducts = (req, res, next) => {
-  res.json({ products: DUMMY_PRODUCTS });
+const getProducts = async (req, res, next) => {
+  let products;
+
+  try {
+    products = await Product.find({});
+  } catch (err) {
+    const error = new HttpError("Could not fetch products", 500);
+    return next(error);
+  }
+
+  if (!products) {
+    const error = new HttpError("No products found", 404);
+    return next(error);
+  }
+
+  res.json({ message: "successfully fetched products", products: products });
 };
 
 const getProductById = async (req, res, next) => {
@@ -71,10 +86,11 @@ const createProduct = async (req, res, next) => {
     );
   }
 
-  const { name, type, details, color, size, image, images } = req.body;
+  const { name, type, price, details, color, size, image, images } = req.body;
   const createdProduct = new Product({
     name,
     type,
+    price,
     details,
     color,
     size,
@@ -109,7 +125,7 @@ const updateProduct = async (req, res, next) => {
     );
   }
 
-  const { name, type, color, size, details } = req.body;
+  const { name, type, price, color, size, details } = req.body;
   const productId = req.params.pid;
   let updatedProduct;
 
@@ -122,6 +138,7 @@ const updateProduct = async (req, res, next) => {
 
   updatedProduct.name = name;
   updatedProduct.type = type;
+  updatedProduct.price = price;
   updatedProduct.color = color;
   updatedProduct.size = size;
   updatedProduct.details = details;
@@ -163,8 +180,56 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "deleted product", deletedProduct });
 };
 
+const addToCart = async (req, res, next) => {
+  const prodId = req.params.pid;
+  let product;
+  let user;
+
+  try {
+    product = await Product.findById(prodId);
+    user = await User.findById("6006c03d14d71c0b621649ed");
+    await user.addToCart(product);
+    await user.save();
+    console.log(user);
+  } catch (err) {
+    const error = new HttpError("Could not add item to cart", 500);
+    return next(error);
+  }
+
+  if (!product) {
+    const error = new HttpError("Can't find product to add", 404);
+    return next(console.error);
+  }
+
+  res.json({ message: "added to cart", user: user, product: product });
+};
+
+const getCart = async (req, res, next) => {
+  let user;
+  let cart = []; 
+
+  try {
+    user = await User.findById("6006c03d14d71c0b621649ed");
+    await user.populate("cart.items.productId").execPopulate();
+    cart = user.cart.items;
+  } catch (err) {
+    const error = new HttpError("Can't fetch cart data", 500);
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Can't find user", 404);
+    return next(error);
+  }
+
+
+  res.json({message: 'successfully got cart', data: cart})
+};
+
 exports.getProducts = getProducts;
 exports.getProductById = getProductById;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
+exports.addToCart = addToCart;
+exports.getCart = getCart;
