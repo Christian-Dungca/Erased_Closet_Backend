@@ -206,7 +206,7 @@ const addToCart = async (req, res, next) => {
 
 const getCart = async (req, res, next) => {
   let user;
-  let cart = []; 
+  let cart = [];
 
   try {
     user = await User.findById("6006c03d14d71c0b621649ed");
@@ -222,8 +222,23 @@ const getCart = async (req, res, next) => {
     return next(error);
   }
 
+  res.json({ message: "successfully got cart", data: cart });
+};
 
-  res.json({message: 'successfully got cart', data: cart})
+const removeFromCart = async (req, res, next) => {
+  const prodId = req.params.pid;
+  let user;
+  console.log('inside cart remove method');
+  
+  try {
+    user = await User.findById("6006c03d14d71c0b621649ed");
+    user.removeFromCart(prodId);
+  } catch (err) {
+    const error = new HttpError("Couldn't remove item from cart", 500);
+    return next(error);
+  }
+
+  res.json({ message: "removed item from cart", user: user});
 };
 
 exports.getProducts = getProducts;
@@ -233,3 +248,4 @@ exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
 exports.addToCart = addToCart;
 exports.getCart = getCart;
+exports.removeFromCart = removeFromCart;

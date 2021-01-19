@@ -9,6 +9,8 @@ router.get("/", productsController.getProducts);
 
 router.get("/cart", productsController.getCart);
 
+router.delete("/cart/:pid", productsController.removeFromCart);
+
 router.post("/cart/:pid", productsController.addToCart);
 
 router.get("/:pid", productsController.getProductById);
