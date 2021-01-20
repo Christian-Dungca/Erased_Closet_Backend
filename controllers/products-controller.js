@@ -4,6 +4,7 @@ const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
 const User = require("../models/user");
+const Order = require("../models/order");
 
 let DUMMY_PRODUCTS = [
   {
@@ -86,6 +87,7 @@ const createProduct = async (req, res, next) => {
     );
   }
 
+  console.log("inside createProduct method");
   const { name, type, price, details, color, size, image, images } = req.body;
   const createdProduct = new Product({
     name,
@@ -187,7 +189,7 @@ const addToCart = async (req, res, next) => {
 
   try {
     product = await Product.findById(prodId);
-    user = await User.findById("6006c03d14d71c0b621649ed");
+    user = await User.findById("60081d8621af760bd1e051f9");
     await user.addToCart(product);
     await user.save();
     console.log(user);
@@ -209,7 +211,7 @@ const getCart = async (req, res, next) => {
   let cart = [];
 
   try {
-    user = await User.findById("6006c03d14d71c0b621649ed");
+    user = await User.findById("60081d8621af760bd1e051f9");
     await user.populate("cart.items.productId").execPopulate();
     cart = user.cart.items;
   } catch (err) {
@@ -222,14 +224,14 @@ const getCart = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ message: "successfully got cart", data: cart });
+  res.json({ message: "successfully got cart", cartItems: cart });
 };
 
 const removeFromCart = async (req, res, next) => {
   const prodId = req.params.pid;
   let user;
-  console.log('inside cart remove method');
-  
+  console.log("inside cart remove method");
+
   try {
     user = await User.findById("6006c03d14d71c0b621649ed");
     user.removeFromCart(prodId);
@@ -238,9 +240,77 @@ const removeFromCart = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ message: "removed item from cart", user: user});
+  res.json({ message: "removed item from cart", user: user });
 };
 
+const postOrder = async (req, res, nexdt) => {
+  let user;
+  let products;
+  let order;
+
+  try {
+    user = await User.findById("60081d8621af760bd1e051f9");
+    await user.populate("cart.items.productId").execPopulate();
+    products = user.cart.items.map((i) => {
+      return { quantity: i.quantity, product: { ...i.productId._doc } };
+    });
+  } catch (err) {
+    const error = new HttpError("Can't get user by that id", 500);
+    return next(error);
+  }
+
+  if (!user || products.length < 0) {
+    const error = new HttpError("No User Found || nothing in cart", 404);
+    return next(error);
+  }
+
+  try {
+    order = new Order({
+      user: {
+        name: user.name,
+        userId: user,
+      },
+      products: products,
+    });
+    await order.save();
+    await user.clearCart();
+  } catch (err) {
+    const error = new HttpError("Could not create user", 500);
+  }
+
+  res.json({ message: "created order", order: order });
+};
+
+const getOrders = async (req, res, next) => {
+  let user;
+  let orders;
+
+  try {
+    user = await User.findById("60081d8621af760bd1e051f9");
+  } catch (err) {
+    const error = new HttpError("Can't get user by that id", 500);
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("No User Found || nothing in cart", 404);
+    return next(error);
+  }
+
+  console.log(user._id);
+
+  try {
+    orders = await Order.find({ "user.userId": user._id });
+  } catch (err) {
+    const error = new HttpError("Can't get orders from that user", 500);
+    return next(error);
+  }
+
+  res.json({orders: orders})
+};
+
+exports.getOrders = getOrders;
+exports.postOrder = postOrder;
 exports.getProducts = getProducts;
 exports.getProductById = getProductById;
 exports.createProduct = createProduct;
