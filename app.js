@@ -38,6 +38,7 @@ app.use((req, res, next) => {
 
 app.use("/api/products", productsRoutes);
 app.use("/api/users", usersRoutes);
+// app.use("/api/admin");
 app.use("/places", googlePlacesRoutes);
 
 app.use((req, res, next) => {
@@ -60,8 +61,7 @@ mongoose
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => {
-    console.log("[CONNECTED]");
-
+    console.log("[SUCCESS] CONNECTED TO SERVER");
     // Will Delete Soon
     const existing = User.find({ email: "christian@gmail.com" });
     if (!existing) {
@@ -70,7 +70,6 @@ mongoose
         email: "christian@gmail.com",
         password: "password123",
       });
-      console.log("[USER CREATED]: ", createdUser);
       createdUser.save();
     }
     app.listen(5000);

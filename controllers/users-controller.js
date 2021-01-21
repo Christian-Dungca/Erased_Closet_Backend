@@ -1,39 +1,28 @@
-const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Christian Dungca",
-    email: "test@test.com",
-    password: "testtest",
-  },
-];
-
 const getUsers = async (req, res, next) => {
-  // const users = User.find({}, 'name email');
   let users;
 
   try {
     users = await User.find({}, "-password");
   } catch (error) {
     const err = new HttpError(
-      "Fetching users failed, please try again later",
+      "[FAILED] FETCHING USERS FAILED",
       500
     );
     return next(err);
   }
-  res.json({ users: users.map((user) => user.toObject({ getters: true })) });
+  res.json({ message: "[SUCCESS] GOT ALL USERS", users: users.map((user) => user.toObject({ getters: true })) });
 };
 
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const err = new HttpError(
-      "Invalid User input, please check entered data.",
+      "[FAILED] INVALID USER INPUT, COULD NOT SIGN IN",
       422
     );
     return next(err);
@@ -46,7 +35,7 @@ const signup = async (req, res, next) => {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
-      "Signing up failed, please try again later",
+      "[FAILED] SIGNING UP FAILED",
       500
     );
     return next(error);
@@ -54,7 +43,7 @@ const signup = async (req, res, next) => {
 
   if (existingUser) {
     const error = new HttpError(
-      "User exist already, please login instead",
+      "[FAILED] USER ALREADY EXIST",
       422
     );
   }
@@ -68,12 +57,12 @@ const signup = async (req, res, next) => {
   try {
     await createdUser.save();
   } catch (err) {
-    const error = new HttpError("Signed up failed", 500);
+    const error = new HttpError("[SUCCESS] COULD NOT CREATE USER", 500);
     return next(error);
   }
 
   res.status(201).json({
-    message: "Successfully signed up user",
+    message: "[SUCCESS] SIGNED UP USER",
     user: createdUser.toObject({ getters: true }),
   });
 };
@@ -86,7 +75,7 @@ const login = async (req, res, next) => {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
-      "Logging in failed, please try again later",
+      "[FAILED] COULD NOT LOGIN",
       500
     );
     return next(error);
@@ -96,13 +85,13 @@ const login = async (req, res, next) => {
     console.log(existingUser);
     console.log(existingUser.password, password);
     const error = new HttpError(
-      "Invalid credentials, could not login user",
+      "[FAILED] INVALID CREDENTIALS, COULD NOT LOGIN USER",
       401
     );
     return next(error);
   }
 
-  res.json({ message: "Logged in", user: existingUser });
+  res.json({ message: "[SUCCESS] LOGGED IN", user: existingUser });
 };
 
 

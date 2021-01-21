@@ -39,11 +39,10 @@ let DUMMY_PRODUCTS = [
 
 const getProducts = async (req, res, next) => {
   let products;
-
   try {
     products = await Product.find({});
   } catch (err) {
-    const error = new HttpError("Could not fetch products", 500);
+    const error = new HttpError("[INTERNAL ERROR] COULD NOT GET PRODUCTS", 500);
     return next(error);
   }
 
@@ -52,7 +51,7 @@ const getProducts = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ message: "successfully fetched products", products: products });
+  res.json({ message: "[SUCCESS] GOT PRODUCTS", products: products });
 };
 
 const getProductById = async (req, res, next) => {
@@ -62,19 +61,19 @@ const getProductById = async (req, res, next) => {
   try {
     product = await Product.findById(productId);
   } catch (err) {
-    const error = new HttpError("Could not find a product", 500);
+    const error = new HttpError("[INTERNAL ERROR] COULD NOT GET PRODUCT", 500);
     return next(error);
   }
 
   if (!product) {
     const error = new HttpError(
-      "Could not find a product for the provided id.",
+      "[FAILED] COULD NOT FIND PRODUCT WITH GIVEN ID",
       404
     );
     return next(console.error);
   }
 
-  res.json({ product: product.toObject({ getters: true }) });
+  res.json({ message: "[SUCCESS]", product: product.toObject({ getters: true }) });
 };
 
 const createProduct = async (req, res, next) => {
@@ -82,12 +81,11 @@ const createProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     console.log(errors);
     throw new HttpError(
-      "Invalid information provided. Aborting creation of product",
+      "[FAILED] INVALID DATA PROVIDED. CANNOT CREATE PRODUCT",
       422
     );
   }
 
-  console.log("inside createProduct method");
   const { name, type, price, details, color, size, image, images } = req.body;
   const createdProduct = new Product({
     name,
@@ -106,13 +104,13 @@ const createProduct = async (req, res, next) => {
   try {
     await createdProduct.save();
   } catch (err) {
-    const error = new HttpError("Creating Product failed.", 500);
+    const error = new HttpError("[FAILED] COULDN'T SAVE PRODUCT TO DB", 500);
     return next(error);
   }
 
   res
     .status(201)
-    .json({ message: "created new product", product: createdProduct });
+    .json({ message: "[SUCCESS] PRODUCT CREATED", product: createdProduct });
 };
 
 const updateProduct = async (req, res, next) => {
@@ -121,7 +119,7 @@ const updateProduct = async (req, res, next) => {
     console.log(errors);
     return next(
       new HttpError(
-        "Invalid information provided. Aborting creation of product",
+        "[FAILED] INVALID DATA PROVIDED. CANNOT CREATE PRODUCT",
         422
       )
     );
@@ -134,7 +132,7 @@ const updateProduct = async (req, res, next) => {
   try {
     updatedProduct = await Product.findById(productId);
   } catch (err) {
-    const error = new HttpError("Could not find a product", 500);
+    const error = new HttpError("[FAILED] COULD NOT GET PRODUCT WITH PROVIDED ID", 404);
     return next(error);
   }
 
@@ -149,14 +147,14 @@ const updateProduct = async (req, res, next) => {
     await updatedProduct.save();
   } catch (err) {
     const error = new HttpError(
-      "Could not find a product for the provided id.",
+      "[FAILED] COULD NOT UPDATE PRODUCT",
       500
     );
     return next(error);
   }
 
   res.status(201).json({
-    message: "Upated product",
+    message: "[SUCCESS] UPDATED PRODUCT",
     product: updatedProduct.toObject({ getters: true }),
   });
 };
@@ -168,79 +166,78 @@ const deleteProduct = async (req, res, next) => {
   try {
     deletedProduct = await Product.findById(productId);
   } catch (error) {
-    const err = new HttpError("Could not find product to delete", 404);
+    const err = new HttpError("[FAILED] COULD NOT FIND PRODUCT WITH PROVIDED ID", 404);
     return next(err);
   }
 
   try {
     await deletedProduct.remove();
   } catch (error) {
-    const err = new HttpError("Could not delete product", 404);
+    const err = new HttpError("[FAILED] COULD NOT DELETE PRODUCT FROM DB", 404);
     return next(err);
   }
 
-  res.status(200).json({ message: "deleted product", deletedProduct });
+  res.status(200).json({ message: "[SUCCESS] DELETED PRODUCT", deletedProduct });
 };
 
+
+// WILL GO INTO USER
 const addToCart = async (req, res, next) => {
   const prodId = req.params.pid;
+  const user = req.user;
   let product;
-  let user;
+
+  console.log(user);
 
   try {
     product = await Product.findById(prodId);
-    user = await User.findById("60081d8621af760bd1e051f9");
-    await user.addToCart(product);
-    await user.save();
-    console.log(user);
+    user.addToCart(product);
+    user.save();
   } catch (err) {
-    const error = new HttpError("Could not add item to cart", 500);
+    const error = new HttpError("[FAILED] ITEM COULD NOT BE ADDED TO CART", 500);
     return next(error);
   }
 
   if (!product) {
-    const error = new HttpError("Can't find product to add", 404);
-    return next(console.error);
+    const error = new HttpError("[FAILED] COULD NOT FIND PRODUCT WITH PROVIDED ID", 404);
+    return next(error);
   }
 
-  res.json({ message: "added to cart", user: user, product: product });
+  res.json({ message: "[SUCCESS] ADDED ITEM TO CART", user: user, product: product });
 };
 
 const getCart = async (req, res, next) => {
-  let user;
+  let user = req.user;
   let cart = [];
 
   try {
-    user = await User.findById("60081d8621af760bd1e051f9");
     await user.populate("cart.items.productId").execPopulate();
     cart = user.cart.items;
   } catch (err) {
-    const error = new HttpError("Can't fetch cart data", 500);
+    const error = new HttpError("[FAILED] COULD NOT FETCH CART DATA", 500);
     return next(error);
   }
 
   if (!user) {
-    const error = new HttpError("Can't find user", 404);
+    const error = new HttpError("[FAILED] USER DOES NOT EXIST", 404);
     return next(error);
   }
 
-  res.json({ message: "successfully got cart", cartItems: cart });
+  res.json({ message: "[SUCCESS] SUCCESFULLY RETRIEVED USER'S CART", cartItems: cart });
 };
 
 const removeFromCart = async (req, res, next) => {
   const prodId = req.params.pid;
-  let user;
-  console.log("inside cart remove method");
+  let user = req.user;
 
   try {
-    user = await User.findById("6006c03d14d71c0b621649ed");
     user.removeFromCart(prodId);
   } catch (err) {
-    const error = new HttpError("Couldn't remove item from cart", 500);
+    const error = new HttpError("[FAILED] COULD NOT REMOVE ITEM FROM CART", 500);
     return next(error);
   }
 
-  res.json({ message: "removed item from cart", user: user });
+  res.json({ message: "[SUCCESS] REMOVED ITEM FROM CART", user: user });
 };
 
 const postOrder = async (req, res, nexdt) => {
