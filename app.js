@@ -7,6 +7,7 @@ const productsRoutes = require("./routes/product-routes");
 const usersRoutes = require("./routes/user-routes");
 const googlePlacesRoutes = require("./routes/google-places-routes");
 const HttpError = require("./models/http-error");
+const User = require("./models/user");
 
 dotenv.config({ path: "./config.env" });
 
@@ -24,6 +25,14 @@ app.use((req, res, next) => {
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
+  next();
+});
+
+app.use((req, res, next) => {
+  const user = User.findById("600963359e79e130a9a03f07").then(
+    (user) => (req.user = user)
+  );
+  console.log("[REQ.USER]: ", req.user);
   next();
 });
 
@@ -51,9 +60,21 @@ mongoose
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => {
-    console.log('connected')
+    console.log("[CONNECTED]");
+
+    // Will Delete Soon
+    const existing = User.find({ email: "christian@gmail.com" });
+    if (!existing) {
+      const createdUser = new User({
+        name: "Christian",
+        email: "christian@gmail.com",
+        password: "password123",
+      });
+      console.log("[USER CREATED]: ", createdUser);
+      createdUser.save();
+    }
     app.listen(5000);
   })
   .catch((err) => {
     console.log(err);
-  }); 
+  });
