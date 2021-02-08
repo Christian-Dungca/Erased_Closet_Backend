@@ -1,32 +1,25 @@
 const express = require("express");
 const { check } = require("express-validator");
 
+const fileUpload = require('../middleware/file-upload');
 const productsController = require("../controllers/products-controller");
 
 const router = express.Router();
 
 router.get("/", productsController.getProducts);
 
-router.get("/orders", productsController.getOrders);
-
-router.post("/create-order", productsController.postOrder);
-
-router.get("/cart", productsController.getCart);
-
-router.delete("/cart/:pid", productsController.removeFromCart);
-
-router.post("/cart/:pid", productsController.addToCart);
-
 router.get("/:pid", productsController.getProductById);
 
 router.post(
   "/",
+  fileUpload.single('image'),
   [
     check("name").notEmpty(),
     check("type").notEmpty(),
     check("color").notEmpty(),
     check("size").notEmpty(),
     check("details").notEmpty(),
+    check("price").notEmpty(),
   ],
   productsController.createProduct
 );
@@ -39,6 +32,7 @@ router.patch(
     check("color").notEmpty(),
     check("size").notEmpty(),
     check("details").notEmpty(),
+    check("price").notEmpty(),
   ],
   productsController.updateProduct
 );

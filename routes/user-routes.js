@@ -19,4 +19,14 @@ router.post(
 
 router.post("/login", usersController.login);
 
+router.get("/orders", usersController.getOrders);
+
+router.post("/create-order", usersController.postOrder);
+
+router.get("/cart", usersController.getCart);
+
+router.delete("/cart/:pid", usersController.removeFromCart);
+
+router.post("/cart/:pid", usersController.addToCart);
+
 module.exports = router;

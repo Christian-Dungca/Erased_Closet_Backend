@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const dotenv = require("dotenv");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -13,8 +16,7 @@ dotenv.config({ path: "./config.env" });
 
 const app = express();
 
-// ChIJ51cu8IcbXWARiRtXIothAS4
-// ChIJ68aBlEKuEmsRHUA9oME5Zh0
+app.use("/uploads/images", express.static(path.join("uploads", "images")));
 
 app.use(bodyParser.json());
 
@@ -28,11 +30,14 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(async (req, res, next) => {
+  const user = await User.findById("600963359e79e130a9a03f07");
+  req.user = user;
+  next();
+});
+
 app.use((req, res, next) => {
-  const user = User.findById("600963359e79e130a9a03f07").then(
-    (user) => (req.user = user)
-  );
-  console.log("[REQ.USER]: ", req.user);
+  console.log(req.body);
   next();
 });
 
@@ -47,6 +52,12 @@ app.use((req, res, next) => {
 });
 
 app.use((error, req, res, next) => {
+  if (req.file) {
+    fs.unlink(req.file.path, (err) => {
+      console.log(err);
+    });
+  }
+
   if (res.headerSent) {
     return next(error);
   }
