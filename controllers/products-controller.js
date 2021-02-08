@@ -1,3 +1,5 @@
+const fs = require("fs");
+
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
@@ -91,7 +93,7 @@ const createProduct = async (req, res, next) => {
   }
 
   const { name, type, price, details, color, size, image } = req.body;
-  console.log(req.body)
+  console.log(req.body);
   const createdProduct = new Product({
     name,
     type,
@@ -166,10 +168,10 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
   const productId = req.params.pid;
-  let deletedProduct;
+  let product;
 
   try {
-    deletedProduct = await Product.findById(productId);
+    product = await Product.findById(productId);
   } catch (error) {
     const err = new HttpError(
       "[FAILED] COULD NOT FIND PRODUCT WITH PROVIDED ID",
@@ -178,16 +180,21 @@ const deleteProduct = async (req, res, next) => {
     return next(err);
   }
 
+  const imagePath = product.image;
+  console.log(imagePath);
+
   try {
-    await deletedProduct.remove();
+    await product.remove();
   } catch (error) {
     const err = new HttpError("[FAILED] COULD NOT DELETE PRODUCT FROM DB", 404);
     return next(err);
   }
 
-  res
-    .status(200)
-    .json({ message: "[SUCCESS] DELETED PRODUCT", deletedProduct });
+  fs.unlink(imagePath, (err) => {
+    console.log(err);
+  });
+
+  res.status(200).json({ message: "[SUCCESS] DELETED PRODUCT", product });
 };
 
 exports.getProducts = getProducts;
