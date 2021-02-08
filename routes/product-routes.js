@@ -12,7 +12,8 @@ router.get("/:pid", productsController.getProductById);
 
 router.post(
   "/",
-  fileUpload.single('image'),
+  // fileUpload.single('image'),
+  fileUpload.array('images', 2),
   [
     check("name").notEmpty(),
     check("type").notEmpty(),

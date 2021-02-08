@@ -92,8 +92,15 @@ const createProduct = async (req, res, next) => {
     );
   }
 
-  const { name, type, price, details, color, size, image } = req.body;
-  console.log(req.body);
+  const { name, type, price, details, color, size, images } = req.body;
+
+  const reqFiles = [];
+  console.log("req.files: ", req.files);
+  for (var i = 0; i < req.files.length; i++) {
+    reqFiles.push(req.files[i].path);
+    // reqFiles.push(req.files[i].filename);
+  }
+
   const createdProduct = new Product({
     name,
     type,
@@ -101,11 +108,9 @@ const createProduct = async (req, res, next) => {
     details,
     color,
     size,
-    image: req.file.path,
-    images: [
-      "https://picsum.photos/seed/picsum/200/300",
-      "https://picsum.photos/200/300?grayscale",
-    ],
+    image: "https://picsum.photos/seed/picsum/200/300",
+    // image: req.file.path,
+    images: reqFiles,
   });
 
   try {
@@ -180,8 +185,8 @@ const deleteProduct = async (req, res, next) => {
     return next(err);
   }
 
-  const imagePath = product.image;
-  console.log(imagePath);
+  const imagesPath = product.images;
+  console.log(imagesPath);
 
   try {
     await product.remove();
@@ -190,9 +195,14 @@ const deleteProduct = async (req, res, next) => {
     return next(err);
   }
 
-  fs.unlink(imagePath, (err) => {
-    console.log(err);
-  });
+  for (const imageUrl of imagesPath) {
+    fs.unlink(imageUrl, (err) => {
+      console.log(err);
+    });
+  }
+  // fs.unlink(imagePath, (err) => {
+  //   console.log(err);
+  // });
 
   res.status(200).json({ message: "[SUCCESS] DELETED PRODUCT", product });
 };
